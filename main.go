@@ -1,18 +1,22 @@
 package main
 
-import "fmt"
+type userPost struct {
+	User User
+	Post []Post
+}
 
 func main() {
-
-	//nums := []int{3, 2, 4}
-	//target := 6
-	//fmt.Println(twoSum(nums, target))
-
-	//x := 10000
-	//fmt.Println(isPalindrome(x))
-
-	//s := "MCMXCIV"
-	//romanToInt(s)
-	digits := "23"
-	fmt.Println(letterCombinations(digits))
+	users := getUsers()
+	posts := getPosts()
+	var usersPosts []userPost
+	var userPosts []Post
+	for _, user := range users {
+		for _, post := range posts {
+			if user.Id == post.UserId {
+				userPosts = append(userPosts, post)
+			}
+		}
+		usersPosts = append(usersPosts, userPost{User: user, Post: userPosts})
+		userPosts = []Post{}
+	}
 }
