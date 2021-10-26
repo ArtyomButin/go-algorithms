@@ -1,8 +1,16 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"net/http"
 	"sync"
+	"time"
 )
+
+const baseUrl = "https://jsonplaceholder.typicode.com/"
 
 type userPost struct {
 	User User
@@ -10,34 +18,59 @@ type userPost struct {
 }
 
 func main() {
-	users := getUsers()
-	posts := getPosts()
-	c := make(chan []Post)
+	log.SetFormatter(&log.JSONFormatter{})
+	start := time.Now()
+	users := make([]User, 0)
+	posts := make([]Post, 0)
+	userPosts := make([]Post, 0)
+	result := make([]userPost, 0)
 	var wg sync.WaitGroup
-	var result []userPost
-	var userPosts []Post
 
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		if err := getResponse(userUrl, &users); err != nil {
+			panic(err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if err := getResponse(postUrl, &posts); err != nil {
+			panic(err)
+		}
+	}()
+	wg.Wait()
 	for _, user := range users {
-		wg.Add(1)
-		go func(userId int) {
-			defer wg.Done()
-			findPosts(userId, &posts, c)
-		}(user.Id)
-		userPosts = append(userPosts, <-c...)
+		for _, post := range posts {
+			if user.Id == post.UserId {
+				userPosts = append(userPosts, post)
+			}
+		}
 		result = append(result, userPost{User: user, Post: userPosts})
 		userPosts = []Post{}
 	}
-	wg.Wait()
-	//jsonRes, _ := json.Marshal(result)
-	//fmt.Println(string(jsonRes))
+	duration := time.Since(start)
+	fmt.Println(duration)
 }
 
-func findPosts(userId int, outerPosts *[]Post, c chan []Post) {
-	var posts []Post
-	for _, post := range *outerPosts {
-		if userId == post.UserId {
-			posts = append(posts, post)
-		}
+func getResponse(uri string, T interface{}) error {
+	client := &http.Client{}
+	r, err := client.Get(baseUrl + uri)
+	if err != nil {
+		return err
 	}
-	c <- posts
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(body, &T); err != nil {
+		return err
+	}
+	return nil
 }
