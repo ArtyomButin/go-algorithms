@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
-	"time"
 )
 
 const baseUrl = "https://jsonplaceholder.typicode.com/"
@@ -20,7 +19,6 @@ type userPost struct {
 
 func main() {
 	logger.SetFormatter(&log.JSONFormatter{})
-	start := time.Now()
 	users := make([]User, 0)
 	posts, userPosts := make([]Post, 0), make([]Post, 0)
 	result := make([]userPost, 0)
@@ -58,13 +56,6 @@ func main() {
 		result = append(result, userPost{User: user, Post: userPosts})
 		userPosts = []Post{}
 	}
-	duration := time.Since(start)
-	logger.SetFormatter(&log.TextFormatter{})
-	logger.WithFields(log.Fields{
-		"package": "main",
-		"function": "main",
-		"data": duration,
-	}).Info("execution time ", duration)
 }
 
 func getResponse(uri string, T interface{}) error {
