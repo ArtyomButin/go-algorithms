@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -23,8 +22,7 @@ func main() {
 	logger.SetFormatter(&log.JSONFormatter{})
 	start := time.Now()
 	users := make([]User, 0)
-	posts := make([]Post, 0)
-	userPosts := make([]Post, 0)
+	posts, userPosts := make([]Post, 0), make([]Post, 0)
 	result := make([]userPost, 0)
 	var wg sync.WaitGroup
 
@@ -61,7 +59,12 @@ func main() {
 		userPosts = []Post{}
 	}
 	duration := time.Since(start)
-	fmt.Println(duration)
+	logger.SetFormatter(&log.TextFormatter{})
+	logger.WithFields(log.Fields{
+		"package": "main",
+		"function": "main",
+		"data": duration,
+	}).Info("execution time ", duration)
 }
 
 func getResponse(uri string, T interface{}) error {
