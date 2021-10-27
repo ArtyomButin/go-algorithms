@@ -12,13 +12,15 @@ import (
 
 const baseUrl = "https://jsonplaceholder.typicode.com/"
 
+var logger = log.New()
+
 type userPost struct {
 	User User
 	Post []Post
 }
 
 func main() {
-	log.SetFormatter(&log.JSONFormatter{})
+	logger.SetFormatter(&log.JSONFormatter{})
 	start := time.Now()
 	users := make([]User, 0)
 	posts := make([]Post, 0)
@@ -40,6 +42,15 @@ func main() {
 		}
 	}()
 	wg.Wait()
+	defer func() {
+		if err := recover(); err != nil {
+			logger.WithFields(log.Fields{
+				"package": "main",
+				"function": "getResponse",
+				"err": err,
+			}).Fatal("panic occurred:", err)
+		}
+	}()
 	for _, user := range users {
 		for _, post := range posts {
 			if user.Id == post.UserId {
@@ -62,7 +73,11 @@ func getResponse(uri string, T interface{}) error {
 	defer func() {
 		err := r.Body.Close()
 		if err != nil {
-			log.Fatalln(err)
+			logger.WithFields(log.Fields{
+				"package": "main",
+				"function": "Body.Close",
+				"err": err,
+			}).Error(err)
 		}
 	}()
 	body, err := ioutil.ReadAll(r.Body)
