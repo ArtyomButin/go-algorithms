@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"time"
 )
 
 const baseUrl = "https://jsonplaceholder.typicode.com/"
@@ -59,7 +60,12 @@ func main() {
 }
 
 func getResponse(uri string, T interface{}) error {
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 20,
+		},
+		Timeout: 10 * time.Second,
+	}
 	r, err := client.Get(baseUrl + uri)
 	if err != nil {
 		return err
